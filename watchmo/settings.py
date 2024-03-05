@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-^hjxv6z+3s&&1@8!1n!qj9le73kj7ef&3td$!^dli1@2%a@n9q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -122,10 +122,10 @@ WSGI_APPLICATION = 'watchmo.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'WATCHMO',
-        'USER': 'root',
-        'PASSWORD': 'bharatSEJA8566@',
-        'HOST': 'localhost',
+        'NAME': 'watchmo',
+        'USER': 'admin',
+        'PASSWORD': 'MikeBharat8566',
+        'HOST': 'watchmo.cdqi4kyuuklz.eu-north-1.rds.amazonaws.com',
         'PORT': '3306',
     }
 }
