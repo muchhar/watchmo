@@ -188,9 +188,11 @@ def schedule_api():
         
     # Get today's date in the format used in the JSON data
     today_date_str = datetime.today().strftime("%a, %b %d")
+    today_date_str_no_zero = datetime.today().strftime("%a, %b %d").lstrip('0')
+
     # Filter games happening today
     for i in games_data.items():
-        if(i[1]['date']==today_date_str):
+        if(i[1]['date']==today_date_str or i[1]['date']==today_date_str_no_zero):
             stripgame(i[0])
 def get_gameid():
     print('getting game')
