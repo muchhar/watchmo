@@ -9,7 +9,6 @@ from django.conf import settings
 import os
 import warnings
 import time
-from datetime import datetime
 
 warnings.filterwarnings("ignore")
 #from datetime import date
@@ -17,6 +16,15 @@ import re
 import requests
 from scrapy.selector import Selector
 import json
+
+import warnings
+warnings.filterwarnings("ignore")
+from datetime import date, datetime, timedelta
+import pytz
+from tzlocal import get_localzone
+
+from scrapy.selector import Selector
+
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
 myheaders = {'User-Agent': user_agent} 
 
@@ -187,6 +195,7 @@ def schedule_api():
 def get_gameid():
     print('getting game')
 
+    #strip team names and IDs from ESPN
     url = 'https://www.espn.com/mens-college-basketball/teams'
     reqs = requests.get(url,headers=myheaders)
     soup = BeautifulSoup(reqs.text, 'html.parser')
@@ -204,14 +213,12 @@ def get_gameid():
             teamnamelist.append(teamname)
             teamid = newlink.split('/')[-2]
             teamidlist.append(teamid)
-            print(f'team:{teamname} ---- id: {teamid}')
 
     teamnamedf = pd.DataFrame(teamnamelist).reset_index()
     teamidlist = pd.DataFrame(teamidlist).reset_index()
     df = pd.merge(teamnamedf,teamidlist,on='index')
     df = df.drop(columns='index').rename(columns = {'0_x':'teamname','0_y':'id'})
     teamnameiddf = df.drop_duplicates().reset_index().drop(columns='index')
-    print(teamnameiddf)
     teamnameiddf['rosterlist'] = ''
     rosterlist = []
     fullnamerosterlist = []
@@ -262,25 +269,26 @@ def get_gameid():
     teamnameiddf['rosterlist'] = rosterlist
     teamnameiddf['fullnamerosterlist'] = fullnamerosterlist
     teamnameiddf['rosterlistdictionary'] = rosterlistdictlist
-    # teamnameiddf.to_excel('teamnameidroster.xlsx')
-    # print(teamnameiddf)
+    teamnameiddf.to_excel('teamnameidroster.xlsx')
 
     import json
     newteamnameiddf = teamnameiddf
     newteamnameiddf = newteamnameiddf.drop(columns = 'rosterlist').drop(columns = 'fullnamerosterlist').drop(columns = 'teamname')
-    print(newteamnameiddf)
     teamidrosterdict = {}
     for index,row in newteamnameiddf.iterrows():
         teamid = row['id']
         rosterdict = row['rosterlistdictionary']
         teamidrosterdict[teamid] = rosterdict
     teamidrosterdict
-    # with open('teamidrosterdict.json', 'w') as fp:
-    #     json.dump(teamidrosterdict, fp)
+    with open('teamidrosterdict.json', 'w') as fp:
+        json.dump(teamidrosterdict, fp)
 
     #opens schedule of specific teamid
     gameiddict1 = {}
     for teamid in teamnameiddf['id']:
+        # Send a GET request to the URL
+        print(teamid)
+        gamedatelist = []
         gametimelist = []
         url = f'https://www.espn.com/mens-college-basketball/team/schedule/_/id/{teamid}'
 
@@ -296,13 +304,40 @@ def get_gameid():
         # Get all the dates of the games
         for i,row in times.iterrows():
             line = str(times['Date'][i])
+            time = str(times['Time'][i]) 
+            
             if len(line) < 10 or len(line)> 11:
                 times = times.drop(labels=[i],axis=0)
-        times = times.reset_index().drop(columns='index').drop(columns=3).drop(columns=4).drop(columns=5).drop(columns=6).drop(columns=7).drop(columns = 'Opponent').drop(columns = 'Time')
+        times = times.reset_index().drop(columns='index').drop(columns=3).drop(columns=4).drop(columns=5).drop(columns=6).drop(columns=7).drop(columns = 'Opponent')
         times = times.reset_index()
-        # Add dates to list
+        # Add dates and times to lists
         for date in times['Date']:
-            gametimelist.append(date)
+            gamedatelist.append(date)
+        for gametime in times['Time']:
+            try:
+                # Try to parse the string as a time in the given format
+                if gametime == "TBD":
+                    gametime = gametime
+                else:
+                    # Assume your input time is in Eastern Time
+                    gametime = datetime.strptime(gametime, '%I:%M %p')
+                    #eastern_timezone = pytz.timezone('US/Eastern')
+
+                    # Localize the Eastern Time to handle daylight saving time
+                    #localized_eastern_time = eastern_timezone.localize(gametime)
+                    #gametime = gametime - timedelta(hours=2)
+                    # get the users local time zone
+                    #user_timezone = get_localzone()
+
+                    #convert Eastern Time to the user's local time zone
+                    #gametime = localized_eastern_time.astimezone(user_timezone)
+
+                    # convert time back to string format
+                    gametime = gametime.strftime("%I:%M %p")
+            except ValueError:
+                gametime = "Final"
+            gametimelist.append(gametime)
+                
         i = 0
         #goes through each link on page
         for link in soup.find_all('a'):
@@ -311,12 +346,13 @@ def get_gameid():
 
             #keeps only the right links for games
             string = 'game/_/gameId/'
-
+            
             #extracts gameid from the game links
             if string in newlink:
-                gameid = newlink.split('/')[-1]
+                gameid = newlink.split('/')[-2]
+                
 
-                #add game id to the list
+                #add gameid to the list
                 if gameid in gameiddict1.keys():
                     teamid2 = {}
                     teamid2['teamid2'] = teamid
@@ -326,27 +362,32 @@ def get_gameid():
                     teamid1['teamid1'] = teamid
                     gameiddict1[f'{gameid}'] = [teamid1]
                     gamedate = {}
-                    gamedate['date'] = gametimelist[i]
+                    gamedate['date'] = gamedatelist[i]
                     gameiddict1[f'{gameid}'] += [gamedate]
+                    gametime = {}
+                    gametime['time'] = gametimelist[i]
+                    gameiddict1[f'{gameid}'] += [gametime]
                 i = i + 1
-                #print(f'team:{teamname} ---- id: {teamid}')
+            
 
     # clean up the data by getting rid of games with only 1 game id
     import json
     gameiddict2 = gameiddict1
     for k in list(gameiddict2.keys()):
-        if len(gameiddict2[k]) < 3:
+        if len(gameiddict2[k]) < 4:
             del gameiddict2[k]
 
-    niceprint = json.dumps(gameiddict2,indent=3)
-    print(len(gameiddict2))
-    print(niceprint)
+    # niceprint = json.dumps(gameiddict2,indent=3)
+    # print(len(gameiddict2))
+    # print(niceprint)
     #gameiddict2
 
-    newdict2 = pd.DataFrame.from_dict(gameiddict2).transpose().reset_index().rename(columns = {'index':'gameid',0:'teamID1',1:'date',2:'teamID2'})
+    newdict2 = pd.DataFrame.from_dict(gameiddict2).transpose().reset_index().rename(columns = {'index':'gameid',0:'teamID1',1:'date',2:'time',3:"teamID2"})
     teamid1list = []
     teamid2list = []
     datelist = []
+    timelist = []
+    print('loadding1...')
     for value in newdict2['teamID1']:
         value = value['teamid1']
         teamid1list.append(value)
@@ -356,12 +397,15 @@ def get_gameid():
     for value in newdict2['date']:
         value = value['date']
         datelist.append(value)
+    for value in newdict2['time']:
+        value = value['time']
+        timelist.append(value)
     newdict2['teamID1'] = teamid1list
     newdict2['teamID2'] = teamid2list
     newdict2['date'] = datelist
+    newdict2['time'] = timelist
     gameiddf = newdict2
-    #display(newdict2)
-
+    print('loading2...')
     gameiddfnew = pd.merge(gameiddf,teamnameiddf,left_on='teamID1',right_on='id',how='left')
     gameiddfnew = gameiddfnew.rename(columns = {'teamname':'teamID1name','rosterlist':'teamID1roster'}).drop(columns = 'id')
     gameiddfnew = pd.merge(gameiddfnew,teamnameiddf,left_on = 'teamID2',right_on='id',how='left')
@@ -372,12 +416,8 @@ def get_gameid():
     new_header = gameIDdictionary.iloc[0] #grab the first row for the header
     gameIDdictionary = gameIDdictionary[1:] #take the data less the header row
     gameIDdictionary.columns = new_header #set the header row as the df header
-    #display(gameIDdictionary)
     gameIDdictionary = gameIDdictionary.to_dict()
     import json
-    media_path = os.path.join(settings.MEDIA_ROOT+'/gamesdata', 'gameIDdictionary.json')
 
-    with open(media_path, 'w') as fp:
+    with open('gameIDdictionary.json', 'w') as fp:
         json.dump(gameIDdictionary, fp)
-    
-   
