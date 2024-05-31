@@ -3,10 +3,11 @@ from rest_framework import serializers
 from .models import Party,JoinParty
 
 class PartySerializer(serializers.ModelSerializer):
+    invite_code = serializers.CharField(read_only=True)  # Include invite_code in the serialized output
+
     class Meta:
         model = Party
-        exclude = ['invite_code', 'user']  # Exclude fields during creation
-
+        exclude = ['user']
 
     def create(self, validated_data):
         # Get the user from the context (passed from the view)
