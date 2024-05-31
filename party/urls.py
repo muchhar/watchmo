@@ -6,6 +6,7 @@ urlpatterns = [
     path('update/<int:pk>/', PartyUpdateView.as_view(), name='party-update'),
     path('get/all/', UserPartyListView.as_view(), name='user-party-list'),
     path('delete/<int:pk>/', PartyDeleteView.as_view(), name='party-delete'),
+    path('get/<int:pk>/', PartyDetailView.as_view(), name='party-detail'),  # New endpoint for getting party by ID
     
     #path('get/<int:pk>/',GetOneView.as_view(),name='get-one'),
     path('search/', PartySearchView.as_view(), name='party-search'),
