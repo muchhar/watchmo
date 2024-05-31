@@ -4,6 +4,18 @@ from django.http import JsonResponse
 from .models import Party,JoinParty
 from .serializers import PartySerializer,JoinPartySerializer
 
+class PartyDetailView(generics.RetrieveAPIView):
+    queryset = Party.objects.all()
+    serializer_class = PartySerializer
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return JsonResponse(serializer.data)
+
 class PartyCreateView(generics.CreateAPIView):
     queryset = Party.objects.all()
     serializer_class = PartySerializer
