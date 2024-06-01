@@ -11,4 +11,7 @@ urlpatterns = [
     
     path('api/social/login/', SocialLoginView.as_view(), name='social-login'),
 
+    path('user/<int:user_id>/', UserDetailView.as_view(), name='user-detail'),
+
+
 ]
