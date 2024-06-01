@@ -22,12 +22,14 @@ def get_tokens_for_user(user):
 
 class UserDetailView(RetrieveAPIView):
     queryset = UserProfile.objects.all()
+    print(queryset)
     serializer_class = UserProfileRetrieveSerializer
     permission_classes = [AllowAny]
     lookup_field = 'user__id'
 
     def get(self, request, *args, **kwargs):
         user_id = self.kwargs.get('user_id')
+        print(user_id)
         try:
             user_profile = UserProfile.objects.get(user__id=user_id)
             serializer = self.get_serializer(user_profile)
