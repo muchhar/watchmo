@@ -9,7 +9,9 @@ from allauth.socialaccount.providers.apple.views import AppleOAuth2Adapter
 from allauth.socialaccount.helpers import complete_social_login
 
 from rest_framework_simplejwt.tokens import RefreshToken, BlacklistMixin
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from rest_framework.generics import RetrieveAPIView
 
 def get_tokens_for_user(user):
   refresh = RefreshToken.for_user(user)
@@ -18,7 +20,20 @@ def get_tokens_for_user(user):
       'access': str(refresh.access_token),
   }
 
+class UserDetailView(RetrieveAPIView):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileRetrieveSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'user_id'
 
+    def get(self, request, *args, **kwargs):
+        user_id = self.kwargs.get('user_id')
+        try:
+            user_profile = UserProfile.objects.get(user_id=user_id)
+            serializer = self.get_serializer(user_profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 class SocialLoginView(APIView):
     def post(self, request, *args, **kwargs):
         adapter_class = None
