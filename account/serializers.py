@@ -31,7 +31,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         )
         
         # Create UserProfile with default values if not provided
-        default_username = 'user_' + ''.join(random.choices(string.digits, k=3))
+        default_username = 'user_' + ''.join(random.choices(string.digits, k=5))
         default_user_icon = 'user_icons/fvc.png'
         
         UserProfile.objects.create(
