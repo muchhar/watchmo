@@ -24,12 +24,12 @@ class UserDetailView(RetrieveAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileRetrieveSerializer
     permission_classes = [AllowAny]
-    lookup_field = 'user_id'
+    lookup_field = 'id'
 
     def get(self, request, *args, **kwargs):
         user_id = self.kwargs.get('user_id')
         try:
-            user_profile = UserProfile.objects.get(user_id=user_id)
+            user_profile = UserProfile.objects.get(id=user_id)
             serializer = self.get_serializer(user_profile)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
