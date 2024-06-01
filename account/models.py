@@ -51,13 +51,11 @@ class User(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
 
-
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    username = models.CharField(max_length=50, unique=True)
-    user_icon = models.ImageField(upload_to='user_icons/', null=True, blank=True)
+    username = models.CharField(max_length=50, unique=True, default='user123')
+    user_icon = models.ImageField(upload_to='user_icons/', null=True, blank=True, default='user_icons/fvc.png')
     
-    # Other fields for user profile like username, user_icon, etc.
-
     def __str__(self):
-        return self.user.username
+        return self.username
+
