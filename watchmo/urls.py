@@ -22,7 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/',include('account.urls')),
     path('api/party/',include('party.urls')),
-    path('api/webscraper/',include('webscraper.urls')),
 ]
 if settings.DEBUG: 
     urlpatterns += static(settings.MEDIA_URL,
