@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-^hjxv6z+3s&&1@8!1n!qj9le73kj7ef&3td$!^dli1@2%a@n9q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['13.48.43.62','localhost', '127.0.0.1']
 
 
 # Application definition
@@ -80,6 +80,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+
 ]
 
 ROOT_URLCONF = 'watchmo.urls'
